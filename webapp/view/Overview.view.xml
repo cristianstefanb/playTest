@@ -1,0 +1,23 @@
+<mvc:View xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m" controllerName="de.sdc.indexeddb_prototype.controller.Overview"
+	xmlns:html="http://www.w3.org/1999/xhtml">
+	<Page title="Title">
+		<content>
+			<Panel expand="false" expanded="ture">
+				<headerToolbar>
+					<Toolbar>
+						<ComboBox width="30%" items="{ path: 'comboboxModel>/' }" change=".onSelect">
+							<core:Item key="{comboboxModel>key}" text="{comboboxModel>key}"/>
+						</ComboBox>
+					</Toolbar>
+				</headerToolbar>
+				<Table id="idMyTable" inset="false" growing="true" growingThreshold="10" growingScrollToLoad="false" alternateRowColors="true"></Table>
+			</Panel>
+		</content>
+		<footer>
+			<Toolbar>
+				<ToolbarSpacer/>
+				<Button text="Sync" press=".onSync($controller)"></Button>
+			</Toolbar>
+		</footer>
+	</Page>
+</mvc:View>
