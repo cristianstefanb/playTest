@@ -11,9 +11,15 @@ sap.ui.define([
 			var request = oModel.metadataLoaded(true);
 
 			request.then(function (result) {
-				var xmlDoc = this._getXMLDoc(result[0]);
-				dfd.resolve(xmlDoc);
-			}.bind(this));
+				// var xmlDoc = this._getXMLDoc(result[0]);
+				// dfd.resolve(xmlDoc);
+				 var oDataModel = this.getOwnerComponent().getModel("serviceModel");
+                    // Fetching MetaModel from the OData model
+                    var oMetaModel = oDataModel.getMetaModel();
+				debugger
+				
+				
+			}.bind(e));
 
 			return dfd.promise();
 		},
@@ -31,6 +37,7 @@ sap.ui.define([
 
 			this._getEntities(xml, arr);
 			this._defMapping(xml, arr);
+			this._tranformETinES(arr);
 
 			return arr;
 		},
@@ -42,10 +49,13 @@ sap.ui.define([
 			for (var i = 0; i < iNodes; i++) {
 				var nodeParent = aElements[i];
 				var sEntName = nodeParent.getAttribute("Name");
+				var childCount = nodeParent.childElementCount;
+				
 				arr[sEntName] = [];
 				arr[sEntName].key = [];
 				arr[sEntName].property = [];
-				var childCount = nodeParent.childElementCount;
+				arr.map[i] = [];
+				
 
 				for (var j = 0; j < childCount; j++) {
 					var child = nodeParent.children[j];
@@ -57,13 +67,13 @@ sap.ui.define([
 						// if (arr[sEntName].key.includes(child.getAttribute("Name"))) { //if key 
 						// } else {
 							arr[sEntName].property.push(child.getAttribute("Name"));
-							if( child.getAttribute("Type") === "Edm.Binary" ) {
-								arr.map.push({
-									key: child.getAttribute("Name"),
-									prop:[child.getAttribute("Type")]
-								});
-							}
-						// }
+							
+							arr.map[i]["key"] = sEntName;
+							arr.map[i][child.getAttribute("Name")] = child.getAttribute("Type");
+							
+							// key: child.getAttribute("Name"),
+							// 		prop:[child.getAttribute("Type")]
+							
 
 					}
 				}
@@ -84,39 +94,33 @@ sap.ui.define([
 				arr.mapping.push(obj);
 			}
 		},
+		
+		_tranformETinES: function (arr) {
+			arr.map.forEach(function(item){
+				var identified = arr.mapping.find(function(el){
+					return el.entityType === item.key;
+				});	
+				item.key = identified.entitySet;
+			});
+			
+			// var result = arr.map.find(function(elem){
+			// 	return arr.mapping.some(function(item){
+			// 		return item.key === elem.entityType;
+			// 	});
+			// });
+		},
 
 		_readServerData: function (ctrl, sEntitySet) {
 			return new Promise(function (resolve, reject) {
 				var oModel = ctrl.getModel("serviceModel");
 				oModel.read("/" + sEntitySet, {
 					success: function (data, result) {
-						var newPromise = IndexedDB.putData(data.results, sEntitySet);
-						newPromise.then(function () {
-							resolve(data.results);
-						});
+						resolve(data.results);
 					}.bind(this)
 				});
 			}.bind(this));
-		},
-		
-		_getTipMappings: function (str, type) {
-			switch (type) {
-			case "Edm.Binary":
-				str = "p_" + str;
-				break;
-			case "Edm.String":
-				str = "s_" + str;
-				break;
-			case "Edm.Int32":
-				str = "i_" + str;
-				break;
-			default:
-				str = "_" + str;
-				break;
-			}
-
-			return str;
 		}
+		
 
 	};
 
