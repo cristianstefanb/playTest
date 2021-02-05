@@ -17,6 +17,7 @@
 			<Toolbar>
 				<ToolbarSpacer/>
 				<Button text="Sync" press=".onSync($controller)"></Button>
+				<Button text="Put" press=".onPut"></Button>
 			</Toolbar>
 		</footer>
 	</Page>

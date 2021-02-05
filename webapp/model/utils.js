@@ -27,6 +27,7 @@ sap.ui.define([
 		parseXmlDoc: function (xml) {
 			var arr = [];
 			arr.mapping = [];
+			arr.map = [];
 
 			this._getEntities(xml, arr);
 			this._defMapping(xml, arr);
@@ -41,7 +42,6 @@ sap.ui.define([
 			for (var i = 0; i < iNodes; i++) {
 				var nodeParent = aElements[i];
 				var sEntName = nodeParent.getAttribute("Name");
-				debugger
 				arr[sEntName] = [];
 				arr[sEntName].key = [];
 				arr[sEntName].property = [];
@@ -54,10 +54,16 @@ sap.ui.define([
 							arr[sEntName].key.push(child.children[x].getAttribute("Name"));
 						}
 					} else if (child.nodeName === "Property") {
-						if (arr[sEntName].key.includes(child.getAttribute("Name"))) { //if key 
-						} else {
+						// if (arr[sEntName].key.includes(child.getAttribute("Name"))) { //if key 
+						// } else {
 							arr[sEntName].property.push(child.getAttribute("Name"));
-						}
+							if( child.getAttribute("Type") === "Edm.Binary" ) {
+								arr.map.push({
+									key: child.getAttribute("Name"),
+									prop:[child.getAttribute("Type")]
+								});
+							}
+						// }
 
 					}
 				}
@@ -92,6 +98,25 @@ sap.ui.define([
 				});
 			}.bind(this));
 		},
+		
+		_getTipMappings: function (str, type) {
+			switch (type) {
+			case "Edm.Binary":
+				str = "p_" + str;
+				break;
+			case "Edm.String":
+				str = "s_" + str;
+				break;
+			case "Edm.Int32":
+				str = "i_" + str;
+				break;
+			default:
+				str = "_" + str;
+				break;
+			}
+
+			return str;
+		}
 
 	};
 

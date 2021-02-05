@@ -29,13 +29,11 @@ sap.ui.define([
 					db = event.target.result;
 					this._version = db.version;
 					resolve(db);
-					debugger
 				};
 				request.onsuccess = function (event) {
 					db = event.target.result;
 					this._version = db.version;
 					resolve(db);
-					debugger
 				}.bind(this);
 				request.onerror = function (err) {
 					reject(err);
@@ -50,7 +48,6 @@ sap.ui.define([
 
 					var request = this._DB.open(this._dbName, this._version + 1);
 					request.onupgradeneeded = function (event) {
-						debugger
 						// Save the IDBDatabase interface
 						var db = event.target.result;
 						var aEntities = arr;
@@ -85,7 +82,8 @@ sap.ui.define([
 
 						if (!db.objectStoreNames.contains(sMapping)) {
 							var oOS = db.createObjectStore(sMapping, { //create ObjectStore
-								keyPath: sKeyPath
+								 keyPath: sKeyPath,
+								 autoIncrement : true 
 							});
 						}
 
@@ -95,11 +93,9 @@ sap.ui.define([
 					request.onsuccess = function (event) {
 						event.target.result.close();
 						resolve(event);
-						debugger
 					};
 					request.onerror = function (err) {
 						event.target.result.close();
-						debugger
 						reject(err);
 					};
 
@@ -125,7 +121,6 @@ sap.ui.define([
 					var request = this._DB.open(this._dbName, this._version);
 					request.onsuccess = function (event) {
 						db = event.target.result;
-						debugger
 
 						//check if ObjectStore already defined
 						if (db.objectStoreNames.contains(sOS)) {
@@ -162,13 +157,12 @@ sap.ui.define([
 						});
 
 						tx.oncomplete = function (event) {
-							console.log("All done");
 							resolve(aData);
 							db.close();
 						};
 
 						tx.onerror = function (event) {
-							console.log(event)
+							db.close();
 						};
 
 						//close db
