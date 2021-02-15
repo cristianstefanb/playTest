@@ -18,12 +18,6 @@ sap.ui.define([
 			return dfd.promise();
 		},
 
-		_getXMLDoc: function (metadata) {
-			var parser = new DOMParser();
-
-			return parser.parseFromString(metadata.metadataString, "text/xml");
-		},
-
 		parseXmlDoc: function (xml) {
 			var arr = [];
 			arr.mapping = [];
@@ -34,6 +28,12 @@ sap.ui.define([
 			this._tranformETinES(arr);
 
 			return arr;
+		},
+
+		_getXMLDoc: function (metadata) {
+			var parser = new DOMParser();
+
+			return parser.parseFromString(metadata.metadataString, "text/xml");
 		},
 
 		_getEntities: function (xml, arr) {
@@ -49,6 +49,7 @@ sap.ui.define([
 				arr[sEntName].key = [];
 				arr[sEntName].property = [];
 				arr.map[i] = [];
+				arr.map[i]["key"] = sEntName;
 
 				for (var j = 0; j < childCount; j++) {
 					var child = nodeParent.children[j];
@@ -57,9 +58,27 @@ sap.ui.define([
 							arr[sEntName].key.push(child.children[x].getAttribute("Name"));
 						}
 					} else if (child.nodeName === "Property") {
-						arr[sEntName].property.push(child.getAttribute("Name"));
-						arr.map[i]["key"] = sEntName;
-						arr.map[i][child.getAttribute("Name")] = child.getAttribute("Type");
+						if (child.getAttribute("Type").split('.')[0] === "Edm") { //if standard element
+							arr[sEntName].property.push(child.getAttribute("Name"));
+
+							arr.map[i][child.getAttribute("Name")] = child.getAttribute("Type");
+						} else {
+							arr.map[i][child.getAttribute("Name")] = [];
+							var aComplexTypes = Array.from(xml.getElementsByTagName("ComplexType"));
+							var ohtmlCT = aComplexTypes.find(function (item) { //HTMLCollection with <Property> as nodes
+								return item.getAttribute("Name") === child.getAttribute("Type").split('.')[1];
+							});
+
+							var aChildrenCT = Array.from(ohtmlCT.children);
+							aChildrenCT.forEach(function (oChildCT) {
+								var sPropName = oChildCT.getAttribute("Name"),
+									sPropType = oChildCT.getAttribute("Type");
+
+								arr.map[i][child.getAttribute("Name")][sPropName] = sPropType;
+							});
+
+						}
+
 					}
 				}
 				arr[sEntName].property.sort();
@@ -106,9 +125,11 @@ sap.ui.define([
 						"$top": 2000
 					},
 					success: function (data, result) {
-						data.results.forEach(function(item){
+						data.results.forEach(function (item) {
 							for (var prop in item) {
-								if (prop==="Discontinued") {
+								if (prop === "Discontinued") { //the value corresponding to this property
+									//cannot be saved in indexeddb
+									// returns error, if the value is not a str.
 									item[prop] = JSON.stringify(item[prop]);
 								}
 							}

@@ -35,7 +35,6 @@ sap.ui.define([
 					this._objectStores = db.objectStoreNames;
 					resolve(db);
 					db.close();
-					debugger
 				}
 
 				function fnDBErr(err) {
@@ -54,7 +53,6 @@ sap.ui.define([
 			return new Promise(function (resolve, reject) {
 				var init = this.init();
 				init.then(function () {
-					debugger
 					var request = this._DB.open(this._dbName, this._version + 1);
 					request.onupgradeneeded = function (event) {
 						// Save the IDBDatabase interface
@@ -132,7 +130,6 @@ sap.ui.define([
 				var db;
 				var request = this._DB.open(this._dbName, this._version);
 				request.onsuccess = function (event) {
-					debugger
 					db = event.target.result;
 					this._idbInstance = db;
 
