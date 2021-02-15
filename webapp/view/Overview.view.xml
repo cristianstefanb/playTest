@@ -8,6 +8,12 @@
 						<ComboBox width="30%" items="{ path: 'comboboxModel>/' }" change=".onSelect">
 							<core:Item key="{comboboxModel>key}" text="{comboboxModel>key}"/>
 						</ComboBox>
+						<ToolbarSpacer/>
+						 <Label text="Choose Service" />
+						 <ComboBox selectionChange=".onSelectModel($event)">
+						 	<core:Item key="es5Model" text="ES5"/>
+						 	<core:Item key="northwindModel" text="Northwind"/>
+						 </ComboBox>
 					</Toolbar>
 				</headerToolbar>
 				<Table id="idMyTable" inset="false" growing="true" growingThreshold="10" growingScrollToLoad="false" alternateRowColors="true"></Table>
@@ -16,8 +22,6 @@
 		<footer>
 			<Toolbar>
 				<ToolbarSpacer/>
-				<Button text="Sync" press=".onSync($controller)"></Button>
-				<Button text="Put" press=".onPut"></Button>
 			</Toolbar>
 		</footer>
 	</Page>

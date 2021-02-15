@@ -16,11 +16,24 @@ sap.ui.define([
 			}.bind(this));
 		},
 
-		onSync: function (event) {
+		onSelectModel: function (oEvent) {
+			var key = oEvent.getSource().getSelectedKey();
+			var oPromiseDBDelete = IndexedDB.deleteDB();
+
+			oPromiseDBDelete.then(function () {
+				this._sync(this, key);
+			}.bind(this)).
+			catch(function (err) {
+				alert(err);
+			});
+
+		},
+
+		_sync: function (ctrl, sModel) {
 			var that = this;
 			sap.ui.core.BusyIndicator.show(0);
 
-			var oPromise = Utils.generateXMLDocument(event);
+			var oPromise = Utils.generateXMLDocument(ctrl, sModel);
 
 			$.when(oPromise).then(function (xmlDoc) {
 				var arrMappings = Utils.parseXmlDoc(xmlDoc);
@@ -42,7 +55,7 @@ sap.ui.define([
 					arrMappings.mapping.forEach(function (entity, index) {
 						aDef[index] = new $.Deferred();
 						var sOS = entity.entitySet;
-						var oNewPromise = Utils._readServerData(that, sOS);
+						var oNewPromise = Utils._readServerData(that, sOS, sModel);
 						$.when(oNewPromise).then(function (data) {
 							aDataForDB[index] = {
 								entity: entity,
@@ -63,7 +76,6 @@ sap.ui.define([
 							sap.ui.core.BusyIndicator.hide();
 						}).catch(function (err) {
 							sap.ui.core.BusyIndicator.hide();
-							console.log(err);
 						});
 					});
 
@@ -79,26 +91,20 @@ sap.ui.define([
 					return dfd.promise();
 				}
 
-				if (IndexedDB._upgrade) {
-					var dbUpgradeNeeded = IndexedDB._upgrade(arrMappings);
+				var dbUpgradeNeeded = IndexedDB._upgrade(arrMappings);
 
-					dbUpgradeNeeded.then(function (result) {
-						var aOS = result.objectStoreNames;
+				dbUpgradeNeeded.then(function (result) {
+					var aOS = result.objectStoreNames;
 
-						fnBindComboBox(aOS);
-						fnServerData();
-					}.bind(this));
-				} else {
-					var aOS = IndexedDB.objectStoreNames;
-
-					fnBindComboBox(aOS).bind(this);
-					fnServerData().bind(this);
-				}
+					fnBindComboBox(aOS);
+					fnServerData();
+				}.bind(this));
 			}.bind(this));
 
 		},
 
 		onSelect: function (event) {
+			sap.ui.core.BusyIndicator.show(0);
 			var sEntity = event.getParameter("newValue");
 			var oTable = this.getView().byId("idMyTable");
 			oTable.destroyColumns();
@@ -107,11 +113,14 @@ sap.ui.define([
 			oMappings.then(function (mappings) {
 				var oPromiseData = IndexedDB.getAllDataForSet(sEntity);
 				oPromiseData.then(function (result) {
-					var i = 0;
 					var oCell = [];
-					for (var prop in result[0]) {
-						if (prop !== "__metadata") {
-							var oColumn = new sap.m.Column("col" + i, {
+					var aProperties = mappings.find(function (mappingToEntity) {
+						return mappingToEntity.key === sEntity;
+					});
+
+					for (var prop in aProperties) {
+						if (prop !== "key") {
+							var oColumn = new sap.m.Column({
 								width: "1em",
 								header: new sap.m.Label({
 									text: prop
@@ -121,15 +130,16 @@ sap.ui.define([
 
 							oCell.push(cell);
 							oTable.addColumn(oColumn);
-							i++;
 						}
 
 					}
+
 					var aColList = new sap.m.ColumnListItem({
 						cells: oCell
 					});
 					oTable.bindItems("model>/", aColList);
 					this.getOwnerComponent().getModel("model").setData(result);
+					sap.ui.core.BusyIndicator.hide();
 				}.bind(this));
 			}.bind(this));
 
@@ -156,15 +166,7 @@ sap.ui.define([
 					}
 					dfd.resolve(arr);
 				} else {
-					IndexedDB._upgradeDBNeeded = true;
-					dfd.reject(MessageBox.warning(
-						"No ObjectStore defined in IndexedDB. We recommend to synchronize the app.", {
-							icon: MessageBox.Icon.WARNING,
-							title: "Warning",
-							actions: [MessageBox.Action.CLOSE],
-							emphasizedAction: MessageBox.Action.CLOSE
-						}
-					));
+					dfd.reject();
 				}
 
 			}).catch(function (err) {
@@ -185,11 +187,6 @@ sap.ui.define([
 		},
 
 		_transformCell: function (entity, arr, prop) {
-
-			// var result = arr.map.find(function(elem){
-			// return arr.mapping.some(function(item){
-			// 	return item.key === elem.entityType;
-			// });
 			var result = arr.find(function (item) {
 				return item.key === entity;
 			});
@@ -201,19 +198,34 @@ sap.ui.define([
 					type = result[pP];
 				}
 			}
+
+			var sProp = "model>" + prop;
+
 			switch (type) {
 			case "Edm.Binary":
-				cell = new sap.m.Image({
-					src: "data:image/jpeg;base64,{model>" + prop + "}",
-					height: "60px"
+				cell = new sap.m.Image();
+				cell.bindProperty("src", sProp, function (sVal) {
+					if (typeof sVal === "string") {
+						var sTrimmed = sVal.substr(104);
+						return "data:image/bmp;base64," + sTrimmed;
+					}
+					return sVal;
 				});
 				break;
 			case "Edm.DateTime":
-				cell = new sap.m.DateTimePicker({
-					value: "{model>" + prop + "}",
-					enabled:false
+				cell = new sap.m.DatePicker({
+					enabled: false
+				}).bindProperty("value", sProp, function (sVal) {
+					if (sVal) {
+						var oDateFormat = sap.ui.core.format.DateFormat.getDateTimeInstance({
+							pattern: "dd.MM.yyyy"
+						});
+						return oDateFormat.format(new Date(sVal));
+					} else {
+						return sVal;
+					}
 				});
-				break;	
+				break;
 			default:
 				cell = new sap.m.Text({
 					text: "{model>" + prop + "}"
@@ -223,7 +235,6 @@ sap.ui.define([
 
 			return cell;
 		}
-
 	});
 
 });

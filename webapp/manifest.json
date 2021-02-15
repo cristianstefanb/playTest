@@ -14,22 +14,18 @@
 			"version": "1.40.12"
 		},
 		"dataSources": {
-			"service": {
+			"northwindService": {
 				"uri": "/destinations/northwind/V2/Northwind/Northwind.svc/",
 				"type": "OData",
 				"settings": {
 					"odataVersion": "2.0"
 				}
 			},
-			"mainService": {
-				"uri": "/indexeddb_prototype",
+			"es5Service": {
+				"uri": "/destinations/ES5/sap/opu/odata/IWBEP/GWSAMPLE_BASIC/",
 				"type": "OData",
 				"settings": {
-					"odataVersion": "2.0",
-					"localUri": "localService/metadata.xml",
-					"annotations": [
-						"annotations"
-					]
+					"odataVersion": "2.0"
 				}
 			},
 			"annotations": {
@@ -78,22 +74,26 @@
 			"cozy": true
 		},
 		"models": {
-			"": {
-				"dataSource": "mainService",
-				"preload": true
+			"northwindModel": {
+				"settings": {
+					"defaultBindingMode": "TwoWay"
+				},
+				"dataSource": "northwindService",
+				"preload": false
+			
+			},
+			"es5Model": {
+				"settings": {
+					"defaultBindingMode": "TwoWay"
+				},
+				"dataSource": "es5Service",
+				"preload": false
 			},
 			"i18n": {
 				"type": "sap.ui.model.resource.ResourceModel",
 				"settings": {
 					"bundleName": "de.sdc.indexeddb_prototype.i18n.i18n"
 				}
-			},
-			"serviceModel": {
-				"settings": {
-					"defaultBindingMode": "TwoWay"
-				},
-				"dataSource": "service",
-				"preload": false
 			},
 			"model": {
 				"type": "sap.ui.model.json.JSONModel",
@@ -113,11 +113,9 @@
 			}
 		},
 		"resources": {
-			"css": [
-				{
-					"uri": "css/style.css"
-				}
-			]
+			"css": [{
+				"uri": "css/style.css"
+			}]
 		},
 		"routing": {
 			"config": {
@@ -129,15 +127,13 @@
 				"controlId": "app",
 				"clearControlAggregation": false
 			},
-			"routes": [
-				{
-					"name": "Overview",
-					"pattern": "",
-					"target": [
-						"Overview"
-					]
-				}
-			],
+			"routes": [{
+				"name": "Overview",
+				"pattern": "",
+				"target": [
+					"Overview"
+				]
+			}],
 			"targets": {
 				"TargetApp": {
 					"viewType": "XML",

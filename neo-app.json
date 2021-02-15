@@ -44,6 +44,14 @@
         "name": "northwind"
       },
       "description": "Northwind OData Service"
+    },
+    {
+      "path": "/destinations/ES5",
+      "target": {
+        "type": "destination",
+        "name": "ES5"
+      },
+      "description": "Northwind OData Service"
     }
   ],
   "sendWelcomeFileRedirect": true

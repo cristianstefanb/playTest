@@ -4,22 +4,16 @@ sap.ui.define([
 
 	return {
 
-		generateXMLDocument: function (e) {
+		generateXMLDocument: function (e, sModel) {
 			var dfd = new $.Deferred();
 			var oController = e.getOwnerComponent();
-			var oModel = oController.getModel("serviceModel");
+			var oModel = oController.getModel(sModel);
 			var request = oModel.metadataLoaded(true);
 
 			request.then(function (result) {
-				// var xmlDoc = this._getXMLDoc(result[0]);
-				// dfd.resolve(xmlDoc);
-				 var oDataModel = this.getOwnerComponent().getModel("serviceModel");
-                    // Fetching MetaModel from the OData model
-                    var oMetaModel = oDataModel.getMetaModel();
-				debugger
-				
-				
-			}.bind(e));
+				var xmlDoc = this._getXMLDoc(result[0]);
+				dfd.resolve(xmlDoc);
+			}.bind(this));
 
 			return dfd.promise();
 		},
@@ -50,12 +44,11 @@ sap.ui.define([
 				var nodeParent = aElements[i];
 				var sEntName = nodeParent.getAttribute("Name");
 				var childCount = nodeParent.childElementCount;
-				
+
 				arr[sEntName] = [];
 				arr[sEntName].key = [];
 				arr[sEntName].property = [];
 				arr.map[i] = [];
-				
 
 				for (var j = 0; j < childCount; j++) {
 					var child = nodeParent.children[j];
@@ -64,17 +57,9 @@ sap.ui.define([
 							arr[sEntName].key.push(child.children[x].getAttribute("Name"));
 						}
 					} else if (child.nodeName === "Property") {
-						// if (arr[sEntName].key.includes(child.getAttribute("Name"))) { //if key 
-						// } else {
-							arr[sEntName].property.push(child.getAttribute("Name"));
-							
-							arr.map[i]["key"] = sEntName;
-							arr.map[i][child.getAttribute("Name")] = child.getAttribute("Type");
-							
-							// key: child.getAttribute("Name"),
-							// 		prop:[child.getAttribute("Type")]
-							
-
+						arr[sEntName].property.push(child.getAttribute("Name"));
+						arr.map[i]["key"] = sEntName;
+						arr.map[i][child.getAttribute("Name")] = child.getAttribute("Type");
 					}
 				}
 				arr[sEntName].property.sort();
@@ -89,20 +74,20 @@ sap.ui.define([
 				var elementSet = aElements[i];
 				var obj = {
 					entitySet: elementSet.getAttribute("Name"),
-					entityType: elementSet.getAttribute("EntityType").slice(15)
+					entityType: elementSet.getAttribute("EntityType").split('.')[1]
 				};
 				arr.mapping.push(obj);
 			}
 		},
-		
+
 		_tranformETinES: function (arr) {
-			arr.map.forEach(function(item){
-				var identified = arr.mapping.find(function(el){
+			arr.map.forEach(function (item) {
+				var identified = arr.mapping.find(function (el) {
 					return el.entityType === item.key;
-				});	
+				});
 				item.key = identified.entitySet;
 			});
-			
+
 			// var result = arr.map.find(function(elem){
 			// 	return arr.mapping.some(function(item){
 			// 		return item.key === elem.entityType;
@@ -110,17 +95,29 @@ sap.ui.define([
 			// });
 		},
 
-		_readServerData: function (ctrl, sEntitySet) {
+		_readServerData: function (ctrl, sEntitySet, sModel) {
 			return new Promise(function (resolve, reject) {
-				var oModel = ctrl.getModel("serviceModel");
+				var oModel = ctrl.getModel(sModel);
+
+				oModel.setSizeLimit('2000');
 				oModel.read("/" + sEntitySet, {
+					urlParameters: {
+						"$skip": 0,
+						"$top": 2000
+					},
 					success: function (data, result) {
+						data.results.forEach(function(item){
+							for (var prop in item) {
+								if (prop==="Discontinued") {
+									item[prop] = JSON.stringify(item[prop]);
+								}
+							}
+						});
 						resolve(data.results);
 					}.bind(this)
 				});
 			}.bind(this));
 		}
-		
 
 	};
 
