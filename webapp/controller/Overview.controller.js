@@ -226,6 +226,15 @@ sap.ui.define([
 						} else {
 							return sVal;
 						}
+					}).bindProperty("tooltip",sProp, function (sVal) {
+						if (sVal) {
+							var oDateFormat = sap.ui.core.format.DateFormat.getDateTimeInstance({
+								pattern: "dd.MM.yyyy"
+							});
+							return oDateFormat.format(new Date(sVal));
+						} else {
+							return sVal;
+						}
 					});
 					break;
 				default:
